@@ -95,8 +95,8 @@ def match_template(img_char):
     # sorted_scores = sorted(label_scores.items(), key=lambda x: x[1])
     # print("Top 1 match:")
     # for label, score in sorted_scores[:1]:
-    #     confidence = max(0.0, min(100.0, (1.0 - score) * 100.0))
-    #     print(f"  {label}: {confidence:.0f}%")
+        # confidence = max(0.0, min(100.0, (1.0 - score) * 100.0))
+        # print(f"  {label}: {confidence:.0f}%")
 
     best_confidence = max(0.0, min(100.0, (1.0 - best_score) * 100.0))
     return best_label if best_label is not None else "?", best_confidence
@@ -120,3 +120,47 @@ def save_templates(label, char_images):
 
         saved_files.append(filename)
     return saved_files
+
+# def save_templates(label, char_images):
+#     saved_files = []
+#     for i, char_img in enumerate(char_images):
+#         char_label = label[i]
+#         processed_img = preprocess_image(char_img)
+
+#         if not os.path.exists(template_dir):
+#             os.makedirs(template_dir)
+
+#         # นับจากไฟล์ในโฟลเดอร์
+#         existing_files = [f for f in os.listdir(template_dir) if f.startswith(f"{char_label}_")]
+#         index = len(existing_files)
+#         filename = f"{char_label}_{index}.png"
+
+#         filepath = os.path.join(template_dir, filename)
+#         cv2.imwrite(filepath, processed_img)
+
+#         saved_files.append(filename)
+#     return saved_files
+
+#     #     if USE_GCS:
+#     #         # นับจาก GCS bucket
+#     #         blobs = list(gcs_bucket.list_blobs(prefix=f"{char_label}_"))
+#     #         index = len(blobs)
+#     #         filename = f"{char_label}_{index}.png"
+
+#     #         _, img_encoded = cv2.imencode('.png', processed_img)
+#     #         blob = gcs_bucket.blob(filename)
+#     #         blob.upload_from_string(img_encoded.tobytes(), content_type="image/png")
+#     #     else:
+#     #         if not os.path.exists(template_dir):
+#     #             os.makedirs(template_dir)
+
+#     #         # นับจากไฟล์ในโฟลเดอร์
+#     #         existing_files = [f for f in os.listdir(template_dir) if f.startswith(f"{char_label}_")]
+#     #         index = len(existing_files)
+#     #         filename = f"{char_label}_{index}.png"
+
+#     #         filepath = os.path.join(template_dir, filename)
+#     #         cv2.imwrite(filepath, processed_img)
+
+#     #     saved_files.append(filename)
+#     # return saved_files
