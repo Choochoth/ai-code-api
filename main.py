@@ -1,5 +1,3 @@
-import os
-import uvicorn
 from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -112,6 +110,9 @@ async def ocr(file: UploadFile = File(...)):
 def read_root():
     return {"status": "ok"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.get("/debug/templates")
 def debug_templates():
@@ -122,13 +123,8 @@ def debug_templates():
     }
 
 
-@app.get("/health")
-async def health():
-    return JSONResponse(content={"status": "ok"}, status_code=200)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # ใช้ค่า PORT จาก Railway หรือ fallback เป็น 8080
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+
 
 # app.add_middleware(
 #     CORSMiddleware,
