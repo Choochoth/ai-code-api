@@ -31,9 +31,8 @@ COPY --from=builder /install /usr/local
 # คัดลอก source code ทั้งหมด
 COPY . .
 
-# คัดลอก Google service account เข้า container
-COPY captcha-templates-187c30864e63.json /app/
-ENV GOOGLE_APPLICATION_CREDENTIALS=/app/captcha-templates-187c30864e63.json
+# คัดลอก captcha_templates เข้า container
+COPY captcha_templates /app/
 
 # เปิด port 8080
 EXPOSE 8080
