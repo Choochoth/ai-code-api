@@ -2,11 +2,10 @@ fastapi
 uvicorn[standard]
 opencv-python-headless
 numpy
+Pillow
 python-multipart
 python-dotenv
 httpx
 databases
 asyncpg
-Pillow
 python-barcode[images]
-psycopg2-binary
