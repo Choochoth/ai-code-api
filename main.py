@@ -110,7 +110,7 @@ async def ocr(file: UploadFile = File(...)):
 def read_root():
     return {"status": "ok"}
 
-@app.get("/health")
+@app.get("/")
 def health_get():
     uptime = round(time.time() - start_time, 2)
     return {"status": "ok", "uptime_seconds": uptime}

@@ -10,6 +10,7 @@ dockerfilePath = "Dockerfile"
 [deploy]
 runtime = "V2"
 numReplicas = 1
+healthcheckPath = "/"
 sleepApplication = false
 useLegacyStacker = false
 multiRegionConfig = { "us-west2" = { numReplicas = 1 } }
