@@ -11,7 +11,7 @@ dockerfilePath = "Dockerfile"
 [deploy]
 runtime = "V2"
 numReplicas = 1
-healthcheckPath = "/health"
+healthcheckPath = "/"
 sleepApplication = true
 useLegacyStacker = false
 multiRegionConfig = { "us-west2" = { numReplicas = 1 } }
@@ -19,14 +19,10 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 healthcheckTimeout = 300
 
-[service]
-region = "oregon"
 
 [repository]
 url = "https://github.com/Choochoth/ai-code-api"
 branch = "railway-redeploy"
 autoDeploy = true
 
-[env]
-PORT = "8000"
-ENV = "production"
+
