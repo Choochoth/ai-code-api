@@ -38,7 +38,7 @@ COPY captcha_templates /app/
 EXPOSE 8080
 
 # Healthcheck Railway
-HEALTHCHECK CMD curl --fail http://localhost:${PORT:-8080}/health || exit 1
+# HEALTHCHECK CMD curl --fail http://localhost:${PORT:-8080}/health || exit 1
 
 # ใช้ shell command ให้ expand PORT
 CMD sh -c "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"
