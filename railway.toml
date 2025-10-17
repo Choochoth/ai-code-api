@@ -14,7 +14,6 @@ healthcheckPath = "/"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
-
 [service]
 region = "oregon"
 
@@ -22,3 +21,8 @@ region = "oregon"
 url = "https://github.com/Choochoth/ai-code-api"
 branch = "railway-redeploy"
 autoDeploy = true
+
+[env]
+# กำหนดค่าเริ่มต้นสำหรับ production
+PORT = "8000"
+ENV = "production"
