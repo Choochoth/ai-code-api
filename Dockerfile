@@ -25,10 +25,10 @@ COPY --from=builder /install /usr/local
 COPY . .
 
 # เปิด port 8080 (Railway จะ override environment variable PORT)
-EXPOSE 8080
+EXPOSE 8000
 
 # Healthcheck dynamic port
-HEALTHCHECK CMD sh -c 'curl --fail http://localhost:${PORT:-8080}/health || exit 1'
+HEALTHCHECK CMD sh -c 'curl --fail https://ai-code-api-production-8218.up.railway.app:${PORT:-8000}/health || exit 1'
 
 # ใช้ python main.py ให้อ่าน PORT จาก environment
 CMD ["python", "main.py"]
