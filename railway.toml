@@ -1,24 +1,13 @@
-"$schema" = "https://railway.com/railway.schema.json"
-
-[project]
-name = "ai-code-api"
-
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "NIXPACKS"
+buildCommand = "pip install -r requirements.txt"
 
 [deploy]
 runtime = "V2"
 numReplicas = 1
-healthcheckPath = "/health"
-sleepApplication = false
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+sleepApplication = true
 useLegacyStacker = false
 multiRegionConfig = {"asia-southeast1-eqsg3a":{"numReplicas":1}}
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-healthcheckTimeout = 300
-
-[repository]
-url = "https://github.com/Choochoth/ai-code-api"
-branch = "railway-redeploy"
-autoDeploy = true
