@@ -123,8 +123,8 @@ def debug_templates():
 
 
 @app.get("/health")
-def health():
-    return {"status": "ok"}
+async def health():
+    return JSONResponse(content={"status": "ok"}, status_code=200)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))  # ใช้ค่า PORT จาก Railway หรือ fallback เป็น 8080
