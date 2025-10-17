@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 import time
 import cv2
 import numpy as np
+import uvicorn
 from utils.image_processing import preprocess_image, match_template, save_templates, crop_captcha, load_templates
 # from routes.player_pool import router as player_pool_router
 # from routes.apply_code import router as apply_code_router
@@ -18,6 +19,9 @@ import socket
 
 app = FastAPI()
 start_time = time.time()
+app = FastAPI()
+
+
 
 # สมมุติว่า database เป็นออบเจกต์เชื่อมต่อ DB ที่คุณมีอยู่แล้ว
 # เช่น: from database import database
@@ -110,9 +114,6 @@ async def ocr(file: UploadFile = File(...)):
 def read_root():
     return {"status": "ok"}
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
 
 @app.get("/debug/templates")
 def debug_templates():
@@ -123,7 +124,13 @@ def debug_templates():
     }
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
 
 
 # app.add_middleware(

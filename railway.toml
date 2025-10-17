@@ -5,7 +5,7 @@ buildCommand = "pip install -r requirements.txt"
 [deploy]
 runtime = "V2"
 numReplicas = 1
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+startCommand = "python main.py"  # ✅ ใช้ python แทน uvicorn ตรง ๆ
 sleepApplication = true
 useLegacyStacker = false
 multiRegionConfig = { "asia-southeast1-eqsg3a" = { numReplicas = 1 } }
