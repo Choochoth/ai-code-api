@@ -27,7 +27,7 @@ COPY . .
 # ✅ ใช้ dynamic port สำหรับ healthcheck
 HEALTHCHECK CMD curl --fail http://localhost:${PORT}/health || exit 1
 
-EXPOSE 8000
+EXPOSE 8080
 
 # ✅ ใช้ dynamic port runtime (สำคัญ!)
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
