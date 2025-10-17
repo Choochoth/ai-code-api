@@ -1,4 +1,6 @@
 # railway.toml
+"$schema" = "https://railway.com/railway.schema.json"
+
 [project]
 name = "ai-code-api"
 
@@ -15,7 +17,6 @@ restartPolicyMaxRetries = 3
 
 [service]
 region = "oregon"
-plan = "free"
 
 [repository]
 url = "https://github.com/Choochoth/ai-code-api"
