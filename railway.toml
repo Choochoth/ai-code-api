@@ -22,15 +22,3 @@ healthcheckTimeout = 300
 url = "https://github.com/Choochoth/ai-code-api"
 branch = "railway-redeploy"
 autoDeploy = true
-
-[env]
-# Environment variables (Railway secrets or .env)
-BACKEND_API_URL = "https://ai-code-api-production-8218.up.railway.app"
-CHANNEL_CODE = "-1002870022460"
-CHANNEL_PAYMENT = "-1003010577707"
-ENV = "production"
-GCS_BUCKET_NAME = "captcha-ocr-service"
-GOOGLE_APPLICATION_CREDENTIALS = "/app/captcha-templates-187c30864e63.json"
-TELEGRAM_BOT_TOKEN = "8216073511:AAG8ujT2dkmO9s_jYu9AonZJhfqDt-TcAhc"
-
-# PORT จะถูก inject อัตโนมัติจาก Railway
