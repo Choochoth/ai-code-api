@@ -8,4 +8,5 @@ python-dotenv
 httpx
 databases
 asyncpg
+google-cloud-storage
 python-barcode[images]
