@@ -32,8 +32,8 @@ COPY --from=builder /install /usr/local
 COPY . .
 
 # Healthcheck for Railway
-HEALTHCHECK CMD curl --fail http://localhost:8000/health || exit 1
+# HEALTHCHECK CMD curl --fail http://localhost:8000/health || exit 1
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
