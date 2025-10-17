@@ -105,6 +105,7 @@ async def ocr(file: UploadFile = File(...)):
         "confidence": int(avg_confidence)
     }
 
+
 @app.get("/")
 def read_root():
     return {"status": "ok"}
