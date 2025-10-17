@@ -1,0 +1,37 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "project": {
+    "name": "ai-code-api"
+  },
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "runtime": "V2",
+    "numReplicas": 1,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
+    "sleepApplication": true,
+    "useLegacyStacker": false,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "multiRegionConfig": {
+      "us-west2": {
+        "numReplicas": 1
+      }
+    }
+  },
+  "service": {
+    "region": "oregon"
+  },
+  "repository": {
+    "url": "https://github.com/Choochoth/ai-code-api",
+    "branch": "railway-redeploy",
+    "autoDeploy": true
+  },
+  "env": {
+    "PORT": "8000",
+    "ENV": "production"
+  }
+}
