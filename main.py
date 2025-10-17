@@ -127,7 +127,7 @@ async def health():
     return JSONResponse(content={"status": "ok"}, status_code=200)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # ใช้ค่า PORT จาก Railway หรือ fallback เป็น 8080
+    port = int(os.environ.get("PORT", 8000))  # ใช้ค่า PORT จาก Railway หรือ fallback เป็น 8080
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
 # app.add_middleware(
