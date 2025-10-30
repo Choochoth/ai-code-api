@@ -2,65 +2,66 @@ import os
 import cv2
 import numpy as np
 from dotenv import load_dotenv
+from typing import List, Tuple, Optional, Dict
 
-# Load environment variables
+# ---------------- Environment ----------------
 load_dotenv()
-ENV = os.getenv("ENV", "development")
-USE_GCS = ENV == "production"
 
-template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "captcha_templates")
-templates = {}
+# ---------------- Constants ----------------
+SUPPORTED_SITES = ["thai_789bet", "thai_jun88k36", "thai_f168"]
 
-if USE_GCS:
-    from google.cloud import storage
-    GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
-    gcs_client = storage.Client()
-    gcs_bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+ROOT_TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "captcha_templates")
+os.makedirs(ROOT_TEMPLATE_DIR, exist_ok=True)
 
-def preprocess_image(img, size=(30, 50)):
-    resized = cv2.resize(img, size)
+# templates[site][label] = [img, img, ...]
+templates: Dict[str, Dict[str, List[np.ndarray]]] = {}
+
+# ---------------- Helpers ----------------
+def preprocess_image(img: np.ndarray, size=(30, 50)) -> np.ndarray:
+    """Grayscale + resize + blur + binary threshold"""
+    if len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    resized = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
     blurred = cv2.GaussianBlur(resized, (3, 3), 0)
     _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return binary
 
-def load_templates():
-    templates.clear()
-    if USE_GCS:
-        print("🔄 Loading templates from GCS...")
-        blobs = gcs_bucket.list_blobs()
-        for blob in blobs:
-            if blob.name.endswith(".png"):
-                label = blob.name.split("_")[0]
-                img_bytes = blob.download_as_bytes()
-                img_array = np.frombuffer(img_bytes, np.uint8)
-                img = cv2.imdecode(img_array, cv2.IMREAD_GRAYSCALE)
-                if img is not None:
-                    img = preprocess_image(img)
-                    templates.setdefault(label, []).append(img)
-    else:
-        print("🔄 Loading templates from local folder...")
-        print(f"📂 Template directory: {template_dir}")
+def _ensure_site_dirs():
+    for s in SUPPORTED_SITES:
+        path = os.path.join(ROOT_TEMPLATE_DIR, s)
+        os.makedirs(path, exist_ok=True)
 
-        if not os.path.exists(template_dir):
-            print("⚠️ Template directory not found, creating...")
-            os.makedirs(template_dir)
+# ---------------- Load Templates ----------------
+def load_templates(site: Optional[str] = None):
+    """Load templates into memory (all or single site)"""
+    _ensure_site_dirs()
+    for s in SUPPORTED_SITES:
+        templates.setdefault(s, {})
 
-        files = [f for f in os.listdir(template_dir) if f.endswith(".png")]
-        print(f"📦 Found {len(files)} PNG files in template_dir")
+    sites_to_load = [site] if site else SUPPORTED_SITES
+    print("🔄 Loading templates from local folder...")
 
+    for s in sites_to_load:
+        site_dir = os.path.join(ROOT_TEMPLATE_DIR, s)
+        files = [f for f in os.listdir(site_dir) if f.endswith(".png")]
+        templates[s] = {}
         for filename in files:
             label = filename.split("_")[0]
-            path = os.path.join(template_dir, filename)
+            path = os.path.join(site_dir, filename)
             img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
             if img is not None:
                 img = preprocess_image(img)
-                templates.setdefault(label, []).append(img)
-            else:
-                print(f"❌ Failed to load image: {path}")
+                templates[s].setdefault(label, []).append(img)
 
-    print(f"✅ Loaded {sum(len(v) for v in templates.values())} templates for {len(templates)} labels.")
+    total = sum(len(v) for site_map in templates.values() for v in site_map.values())
+    site_counts = {s: sum(len(v) for v in templates.get(s, {}).values()) for s in SUPPORTED_SITES}
+    print(f"✅ Loaded {total} templates across sites: {site_counts}")
 
-def crop_captcha(img, num_chars=4):
+# ---------------- Crop Captcha ----------------
+def crop_captcha(img: np.ndarray, num_chars: int = 4) -> List[np.ndarray]:
+    """Split captcha image horizontally"""
+    if len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     height, width = img.shape
     char_width = width // num_chars
     os.makedirs("cropped_debug", exist_ok=True)
@@ -72,51 +73,82 @@ def crop_captcha(img, num_chars=4):
         chars.append(preprocess_image(char_img))
     return chars
 
-def match_template(img_char):
+# ---------------- Match Template ----------------
+def match_template(site: str, img_char: np.ndarray) -> Tuple[Optional[str], float]:
+    """Return best matching label and confidence"""
+    site = site.lower()
+    if site not in SUPPORTED_SITES:
+        return "?", 0.0
+
     img_char = preprocess_image(img_char)
     best_label = None
-    best_score = float('inf')
-    label_scores = {}
+    best_score = float("inf")
 
-    for label, template_list in templates.items():
-        min_scores = []
+    site_templates = templates.get(site, {})
+    if not site_templates:
+        return "?", 0.0
+
+    for label, template_list in site_templates.items():
+        scores = []
         for template_img in template_list:
-            res = cv2.matchTemplate(img_char, template_img, cv2.TM_SQDIFF_NORMED)
-            min_val, _, _, _ = cv2.minMaxLoc(res)
-            min_scores.append(min_val)
-
-        if min_scores:
-            best_score_for_label = min(min_scores)
-            label_scores[label] = best_score_for_label
-            if best_score_for_label < best_score:
-                best_score = best_score_for_label
+            try:
+                res = cv2.matchTemplate(img_char, template_img, cv2.TM_SQDIFF_NORMED)
+                min_val, _, _, _ = cv2.minMaxLoc(res)
+                scores.append(min_val)
+            except Exception:
+                continue
+        if scores:
+            score = min(scores)
+            if score < best_score:
+                best_score = score
                 best_label = label
 
-    # sorted_scores = sorted(label_scores.items(), key=lambda x: x[1])
-    # print("Top 1 match:")
-    # for label, score in sorted_scores[:1]:
-    #     confidence = max(0.0, min(100.0, (1.0 - score) * 100.0))
-    #     print(f"  {label}: {confidence:.0f}%")
+    conf = max(0.0, min(100.0, (1.0 - best_score) * 100.0))
+    return (best_label if best_label else "?"), conf
 
-    best_confidence = max(0.0, min(100.0, (1.0 - best_score) * 100.0))
-    return best_label if best_label is not None else "?", best_confidence
+# ---------------- Save Templates ----------------
+def save_templates(site: str, label: str, char_images: List[np.ndarray]) -> List[str]:
+    """Save images and update memory templates"""
+    site = site.lower()
+    if site not in SUPPORTED_SITES:
+        raise ValueError("unsupported site")
 
-def save_templates(label, char_images):
+    site_dir = os.path.join(ROOT_TEMPLATE_DIR, site)
+    os.makedirs(site_dir, exist_ok=True)
+
     saved_files = []
+
+    templates.setdefault(site, {})
+
+    if len(label) != len(char_images):
+        raise ValueError(f"Label length ({len(label)}) does not match number of chars ({len(char_images)})")
+
     for i, char_img in enumerate(char_images):
         char_label = label[i]
-        filename = f"{char_label}_{len(templates.get(char_label, []))}.png"
+
+        # ensure key exists
+        templates[site].setdefault(char_label, [])
+
         processed_img = preprocess_image(char_img)
 
-        if USE_GCS:
-            _, img_encoded = cv2.imencode('.png', processed_img)
-            blob = gcs_bucket.blob(filename)
-            blob.upload_from_string(img_encoded.tobytes(), content_type="image/png")
-        else:
-            if not os.path.exists(template_dir):
-                os.makedirs(template_dir)
-            filepath = os.path.join(template_dir, filename)
-            cv2.imwrite(filepath, processed_img)
+        existing = [f for f in os.listdir(site_dir) if f.startswith(f"{char_label}_") and f.endswith(".png")]
+        filename = f"{char_label}_{len(existing)}.png"
+        filepath = os.path.join(site_dir, filename)
 
+        cv2.imwrite(filepath, processed_img)
         saved_files.append(filename)
+
+        templates[site][char_label].append(processed_img)
+
+    print(f"💾 Saved and added {len(saved_files)} templates for site '{site}'")
     return saved_files
+
+
+# ---------------- Summary Helper ----------------
+def get_template_summary() -> Dict[str, int]:
+    """Return total templates count per site"""
+    summary = {}
+    for site, mapping in templates.items():
+        summary[site] = sum(len(v) for v in mapping.values())
+    summary["_total"] = sum(summary.values())
+    return summary

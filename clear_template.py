@@ -34,46 +34,47 @@ def is_bad_template(img):
 
     return None, None
 
-# ตรวจสอบและลบ
-for filename in os.listdir(template_dir):
-    if not filename.endswith(".png"):
-        continue
+# ✅ วนตรวจทุกไฟล์ในทุกโฟลเดอร์ย่อย
+for root, dirs, files in os.walk(template_dir):
+    for filename in files:
+        if not filename.endswith(".png"):
+            continue
 
-    filepath = os.path.join(template_dir, filename)
-    label = filename.split("_")[0]
+        filepath = os.path.join(root, filename)
+        label = filename.split("_")[0]
 
-    img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
-    if img is None:
-        log_data.append({"filename": filename, "reason": "cannot read image"})
-        continue
+        img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            log_data.append({"filename": filename, "reason": "cannot read image"})
+            continue
 
-    img = preprocess_image(img)
-    reason, value = is_bad_template(img)
+        img = preprocess_image(img)
+        reason, value = is_bad_template(img)
 
-    if reason:
-        print(f"🗑️ {filename} | {reason}: {value}")
-        os.remove(filepath)
-        log_data.append({
-            "filename": filename,
-            "reason": reason,
-            reason.split()[0]: value
-        })
-        continue
+        if reason:
+            print(f"🗑️ {filepath} | {reason}: {value}")
+            os.remove(filepath)
+            log_data.append({
+                "filename": filepath,
+                "reason": reason,
+                reason.split()[0]: value
+            })
+            continue
 
-    predicted_label, confidence = match_template(img)
+        predicted_label, confidence = match_template(img)
 
-    if predicted_label != label or confidence < MIN_CONFIDENCE:
-        print(f"🗑️ {filename} | predict: {predicted_label} ({confidence:.1f}%) != label {label}")
-        os.remove(filepath)
-        log_data.append({
-            "filename": filename,
-            "reason": "confidence too low" if confidence < MIN_CONFIDENCE else "wrong label",
-            "predicted": predicted_label,
-            "confidence": round(confidence, 2),
-            "label": label
-        })
-    else:
-        print(f"✅ {filename} | ok ({confidence:.1f}%)")
+        if predicted_label != label or confidence < MIN_CONFIDENCE:
+            print(f"🗑️ {filepath} | predict: {predicted_label} ({confidence:.1f}%) != label {label}")
+            os.remove(filepath)
+            log_data.append({
+                "filename": filepath,
+                "reason": "confidence too low" if confidence < MIN_CONFIDENCE else "wrong label",
+                "predicted": predicted_label,
+                "confidence": round(confidence, 2),
+                "label": label
+            })
+        else:
+            print(f"✅ {filepath} | ok ({confidence:.1f}%)")
 
 # เขียน log
 with open(LOG_PATH, "w", encoding="utf-8") as f:

@@ -1,90 +1,99 @@
-from fastapi import FastAPI, UploadFile, File, Query
-from fastapi.responses import JSONResponse, Response
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from typing import List, Dict
 import time
 import cv2
 import numpy as np
-import uvicorn
-from utils.image_processing import preprocess_image, match_template, save_templates, crop_captcha, load_templates
-# from routes.player_pool import router as player_pool_router
-# from routes.apply_code import router as apply_code_router
-# from routes.payment import router as payment_router
-# from routes.master_data import router as master_data_router
-# from routes.generate_coupon import router as generate_coupon_router  # ✅
-# from db.database import database
+import os
+import json
 
-import asyncio
-import socket
+from utils.image_processing import (
+    match_template,
+    save_templates,
+    crop_captcha,
+    load_templates,
+    get_template_summary,
+    SUPPORTED_SITES,
+)
+from utils.order_package import submit_payment  # import ฟังก์ชัน
 
+# ---------------- FastAPI App ----------------
 app = FastAPI()
 start_time = time.time()
 app = FastAPI()
 
 
 
-# สมมุติว่า database เป็นออบเจกต์เชื่อมต่อ DB ที่คุณมีอยู่แล้ว
-# เช่น: from database import database
-
-# async def is_internet_connected(host="8.8.8.8", port=53, timeout=3):
-#     try:
-#         socket.setdefaulttimeout(timeout)
-#         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-#         return True
-#     except socket.error:
-#         return False
-
+# ---------------- Startup ----------------
 @app.on_event("startup")
 async def startup():
     print("🔄 Loading templates at startup...")
     load_templates()
     print("✅ Templates loaded into memory")
 
-#     if await is_internet_connected():
-#         try:
-#             await database.connect()
-#             print("✅ Database connected")
-#         except Exception as e:
-#             print(f"❌ Database connection failed: {e}")
-#     else:
-#         print("❌ No internet connection. Skipping database connection.")
+# ---------------- Helpers ----------------
+def validate_site(site: str):
+    return site.lower() in SUPPORTED_SITES
 
-# @app.on_event("shutdown")
-# async def shutdown():
-#     try:
-#         await database.disconnect()
-#         print("🔻 Database disconnected")
-#     except Exception as e:
-#         print(f"⚠️ Database disconnection error: {e}")
-
+# ---------------- Reload Templates ----------------
 @app.post("/api/reload-templates")
-def reload_templates():
-    load_templates()
-    return {"message": "Templates reloaded"}
+def reload_all_templates():
+    load_templates()  # reload all sites
+    return {"message": "All templates reloaded.", "summary": get_template_summary()}
 
-@app.post("/api/add-template")
+# ---------------- Add Template ----------------
+@app.post("/api/{site}/add-template")
 async def add_template(
-    label: str = Query(..., min_length=4, max_length=4, regex="^[a-zA-Z0-9]{4}$"),
-    file: UploadFile = File(...)
+    site: str = Path(..., description="site name (thai_789bet, thai_jun88k36, thai_f168)"),
+    label: str = Query(..., min_length=4, max_length=4),
+    file: UploadFile = File(...),
 ):
+    site = site.lower()
+    if not validate_site(site):
+        return JSONResponse(status_code=400, content={"error": "unsupported site", "supported": SUPPORTED_SITES})
+
+    # Validate label rules
+    if site in ("thai_jun88k36", "thai_789bet"):
+        if not label.isalnum() or not label.upper() == label:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "label must be uppercase A-Z and 0-9 for this site"}
+            )
+    elif site == "thai_f168":
+        if not label.isalnum():
+            return JSONResponse(
+                status_code=400,
+                content={"error": "label must be A-Z, a-z or 0-9 for f168"}
+            )
+
+    # Decode image
     image_bytes = await file.read()
     file_bytes = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
     if img is None:
         return JSONResponse(status_code=400, content={"error": "Invalid image file."})
 
+    # Split and save
     char_images = crop_captcha(img, num_chars=4)
-
     if len(label) != len(char_images):
-        return JSONResponse(status_code=400, content={"error": "Label length does not match cropped characters count."})
+        return JSONResponse(status_code=400, content={"error": "Label length does not match cropped chars."})
 
-    saved_files = save_templates(label, char_images)
-    load_templates()
+    saved_files = save_templates(site, label, char_images)
+    load_templates(site)  # reload only that site
 
-    return {"message": "Templates saved.", "files": saved_files}
+    return {"message": "Templates saved.", "saved": saved_files, "summary": get_template_summary()}
 
-@app.post("/api/ocr")
-async def ocr(file: UploadFile = File(...)):
+# ---------------- OCR Endpoint ----------------
+@app.post("/api/{site}/ocr")
+async def ocr(
+    site: str = Path(..., description="site name (thai_789bet, thai_jun88k36, thai_f168)"),
+    file: UploadFile = File(...),
+):
+    site = site.lower()
+    if not validate_site(site):
+        return JSONResponse(status_code=400, content={"error": "unsupported site", "supported": SUPPORTED_SITES})
+
     image_bytes = await file.read()
     file_bytes = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
@@ -92,63 +101,108 @@ async def ocr(file: UploadFile = File(...)):
         return JSONResponse(status_code=400, content={"error": "Invalid image file."})
 
     chars = crop_captcha(img, num_chars=4)
-
     result_text = ""
     confidences = []
 
-    for i, char_img in enumerate(chars):
-        # print(f"\n--- Matching character #{i+1} ---")
-        label, conf = match_template(char_img)
-        result_text += label
+    for char_img in chars:
+        label, conf = match_template(site, char_img)
+        result_text += (label if label is not None else "?")
         confidences.append(conf)
 
-    avg_confidence = round(sum(confidences) / len(confidences), 0)
+    avg_confidence = round(sum(confidences) / len(confidences), 0) if confidences else 0
 
-    return {
-        "text": result_text,
-        "confidence": int(avg_confidence)
-    }
+    return {"text": result_text, "confidence": int(avg_confidence), "site": site}
 
+# ---------------- Debug Templates ----------------
+@app.get("/debug/templates")
+def debug_templates():
+    return get_template_summary()
 
+@app.get("/debug/templates/{site}")
+def debug_templates_site(site: str = Path(..., description="site name (thai_789bet, thai_jun88k36, thai_f168)")):
+    site = site.lower()
+    if not validate_site(site):
+        return JSONResponse(status_code=400, content={"error": "unsupported site", "supported": SUPPORTED_SITES})
+    from utils.image_processing import templates
+    mapping = templates.get(site, {})
+    return {"site": site, "labels": list(mapping.keys()), "total_images": sum(len(v) for v in mapping.values())}
+
+# ---------------- Health ----------------
 @app.get("/")
 def read_root():
     return {"status": "ok"}
 
 
-@app.get("/debug/templates")
-def debug_templates():
-    from utils.image_processing import templates
-    return {
-        "labels": list(templates.keys()),
-        "total_images": sum(len(v) for v in templates.values())
-    }
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+@app.get("/api/packages")
+async def get_packages(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0)
+):
+    file_path = os.path.join("data", "package.json")
 
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="package.json not found")
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[
-#         "http://localhost:5100",
-#         "https://typescript-telegram-auto-forword-production.up.railway.app",
-#         "https://typescript-telegram-auto-forword.onrender.com"
-#     ],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-# app.mount("/static/generated_coupons", StaticFiles(directory="generated_coupons"), name="generated_coupons")
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-# app.include_router(payment_router)
-# app.include_router(generate_coupon_router, prefix="/api")
-# app.include_router(player_pool_router, prefix="/api")
-# app.include_router(apply_code_router, prefix="/api")
-# app.include_router(master_data_router, prefix="/api")
+        # อ่านค่าหลัก
+        free_package = data.get("free_package", {})
+        day_package = data.get("day_package", {})
+        package = data.get("package", {})
 
+        # รองรับ limit / offset เฉพาะ package_data
+        package_data = package.get("package_data", [])
+        sliced = package_data[offset: offset + limit]
+
+        return {
+            "free_package": free_package,
+            "day_package": day_package,
+            "package": {
+                "package_title": package.get("package_title"),
+                "package_desc": package.get("package_desc"),
+                "package_data": sliced
+            },
+            "meta": {
+                "total": len(package_data),
+                "limit": limit,
+                "offset": offset
+            }
+        }
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON format in package.json")
+
+@app.post("/api/submit-order")
+async def submit_order(
+    package_id: str = Form(...),
+    package: str = Form(...),
+    price: float = Form(...),
+    site: str = Form(...),
+    user: str = Form(...),
+    slip: UploadFile = File(...),
+    notifyTelegram: bool = Form(False),
+    telegramId: str = Form(None)
+):
+    # เรียกฟังก์ชัน submit_payment จาก utils/order_package
+    return await submit_payment(
+        package_id=package_id,
+        package=package,
+        price=price,
+        site=site,
+        user=user,
+        slip=slip,
+        notifyTelegram=notifyTelegram,
+        telegramId=telegramId
+    )
