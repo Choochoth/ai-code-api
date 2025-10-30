@@ -136,6 +136,7 @@ def health_get():
 
 
 
+# ---------------- CORS ----------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -144,49 +145,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------- Packages ----------------
 @app.get("/api/packages")
-async def get_packages(
-    limit: int = Query(100, ge=1, le=500),
-    offset: int = Query(0, ge=0)
-):
+def get_packages(limit: int = 100, offset: int = 0):
     file_path = os.path.join("data", "package.json")
-
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="package.json not found")
+        return JSONResponse({"error": "package.json not found"}, status_code=404)
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    package_data = data.get("package", {}).get("package_data", [])
+    sliced = package_data[offset: offset+limit]
+    return {
+        "package": {"package_data": sliced},
+        "meta": {"total": len(package_data), "limit": limit, "offset": offset}
+    }
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        # อ่านค่าหลัก
-        free_package = data.get("free_package", {})
-        day_package = data.get("day_package", {})
-        package = data.get("package", {})
-
-        # รองรับ limit / offset เฉพาะ package_data
-        package_data = package.get("package_data", [])
-        sliced = package_data[offset: offset + limit]
-
-        return {
-            "free_package": free_package,
-            "day_package": day_package,
-            "package": {
-                "package_title": package.get("package_title"),
-                "package_desc": package.get("package_desc"),
-                "package_data": sliced
-            },
-            "meta": {
-                "total": len(package_data),
-                "limit": limit,
-                "offset": offset
-            }
-        }
-
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Invalid JSON format in package.json")
-
+# ---------------- Submit Order ----------------
 @app.post("/api/submit-order")
-async def submit_order(
+async def api_submit_order(
     package_id: str = Form(...),
     package: str = Form(...),
     price: float = Form(...),
@@ -196,7 +172,6 @@ async def submit_order(
     notifyTelegram: bool = Form(False),
     telegramId: str = Form(None)
 ):
-    # เรียกฟังก์ชัน submit_payment จาก utils/order_package
     return await submit_payment(
         package_id=package_id,
         package=package,
