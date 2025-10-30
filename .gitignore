@@ -7,11 +7,12 @@ __pycache__/
 *.pyo
 
 # Environment variables
-
 .env
+
 # Debug and generated files
 cropped_debug/
 generated_coupons/
+uploads/
 
 # SQLite or other databases
 *.sql
