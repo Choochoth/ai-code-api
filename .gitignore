@@ -7,8 +7,8 @@ __pycache__/
 *.pyo
 
 # Environment variables
-.env
 
+.env
 # Debug and generated files
 cropped_debug/
 generated_coupons/
