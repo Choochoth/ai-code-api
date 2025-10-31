@@ -109,8 +109,8 @@ async def submit_payment(
                 except Exception as e:
                     print(f"⚠️ ส่ง Admin ไม่สำเร็จ {chat_id}: {e}")
 
-        if TELEGRAM_BOT_TOKEN and CHANNEL_CODE:
-            await send_message(CHANNEL_CODE, caption_status)
+        # if TELEGRAM_BOT_TOKEN and CHANNEL_CODE:
+        #     await send_message(CHANNEL_CODE, caption_status)
 
     except Exception as e:
         print("⚠️ ส่ง Telegram channel failed:", e)
