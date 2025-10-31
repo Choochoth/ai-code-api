@@ -33,6 +33,17 @@ async def startup():
 def validate_site(site: str):
     return site.lower() in SUPPORTED_SITES
 
+
+# ---------------- Health ----------------
+@app.get("/")
+def read_root():
+    return {"status": "ok"}
+
+@app.get("/health")
+def health_get():
+    uptime = round(time.time() - start_time, 2)
+    return {"status": "ok", "uptime_seconds": uptime}
+
 # ---------------- Reload Templates ----------------
 @app.post("/api/reload-templates")
 def reload_all_templates():
@@ -124,15 +135,7 @@ def debug_templates_site(site: str = Path(..., description="site name (thai_789b
     mapping = templates.get(site, {})
     return {"site": site, "labels": list(mapping.keys()), "total_images": sum(len(v) for v in mapping.values())}
 
-# ---------------- Health ----------------
-@app.get("/")
-def read_root():
-    return {"status": "ok"}
 
-@app.get("/health")
-def health_get():
-    uptime = round(time.time() - start_time, 2)
-    return {"status": "ok", "uptime_seconds": uptime}
 
 
 
