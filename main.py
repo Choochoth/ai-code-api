@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form
+from fastapi import FastAPI, UploadFile, File, Query, Path, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict
@@ -21,9 +21,6 @@ from utils.order_package import submit_payment  # import ฟังก์ชั�
 # ---------------- FastAPI App ----------------
 app = FastAPI()
 start_time = time.time()
-app = FastAPI()
-
-
 
 # ---------------- Startup ----------------
 @app.on_event("startup")
@@ -132,6 +129,10 @@ def debug_templates_site(site: str = Path(..., description="site name (thai_789b
 def read_root():
     return {"status": "ok"}
 
+@app.get("/health")
+def health_get():
+    uptime = round(time.time() - start_time, 2)
+    return {"status": "ok", "uptime_seconds": uptime}
 
 
 
