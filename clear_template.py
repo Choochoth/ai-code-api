@@ -2,9 +2,9 @@ import os
 import cv2
 import numpy as np
 import json
-from utils.image_processing import preprocess_image, match_template, load_templates, template_dir
+from utils.image_processing import preprocess_image, match_template, load_templates, ROOT_TEMPLATE_DIR, SUPPORTED_SITES
 
-# โหลด templates
+# โหลด templates เข้าหน่วยความจำ
 load_templates()
 
 # ==================== CONFIG ====================
@@ -18,7 +18,7 @@ LOG_PATH = "cleared_templates_log.json"
 
 log_data = []
 
-def is_bad_template(img):
+def is_bad_template(img: np.ndarray):
     """ตรวจสอบลักษณะของภาพที่อาจจะใช้ไม่ได้"""
     black_ratio = np.count_nonzero(img == 0) / img.size
     if black_ratio < MIN_BLACK_RATIO:
@@ -34,18 +34,27 @@ def is_bad_template(img):
 
     return None, None
 
-# ✅ วนตรวจทุกไฟล์ในทุกโฟลเดอร์ย่อย
-for root, dirs, files in os.walk(template_dir):
-    for filename in files:
+# ✅ วนตรวจทุก site ใน template directory
+for site in SUPPORTED_SITES:
+    site_dir = os.path.join(ROOT_TEMPLATE_DIR, site)
+    if not os.path.exists(site_dir):
+        continue
+
+    print(f"\n🔍 ตรวจสอบเทมเพลตของไซต์: {site}")
+    for filename in os.listdir(site_dir):
         if not filename.endswith(".png"):
             continue
 
-        filepath = os.path.join(root, filename)
+        filepath = os.path.join(site_dir, filename)
         label = filename.split("_")[0]
 
         img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
         if img is None:
-            log_data.append({"filename": filename, "reason": "cannot read image"})
+            log_data.append({
+                "filename": filepath,
+                "site": site,
+                "reason": "cannot read image"
+            })
             continue
 
         img = preprocess_image(img)
@@ -56,27 +65,31 @@ for root, dirs, files in os.walk(template_dir):
             os.remove(filepath)
             log_data.append({
                 "filename": filepath,
+                "site": site,
                 "reason": reason,
-                reason.split()[0]: value
+                "value": value
             })
             continue
 
-        predicted_label, confidence = match_template(img)
+        # ตรวจสอบการ match กับ templates ปัจจุบัน
+        predicted_label, confidence = match_template(site, img)
 
         if predicted_label != label or confidence < MIN_CONFIDENCE:
+            reason_text = "confidence too low" if confidence < MIN_CONFIDENCE else "wrong label"
             print(f"🗑️ {filepath} | predict: {predicted_label} ({confidence:.1f}%) != label {label}")
             os.remove(filepath)
             log_data.append({
                 "filename": filepath,
-                "reason": "confidence too low" if confidence < MIN_CONFIDENCE else "wrong label",
+                "site": site,
+                "reason": reason_text,
                 "predicted": predicted_label,
                 "confidence": round(confidence, 2),
                 "label": label
             })
         else:
-            print(f"✅ {filepath} | ok ({confidence:.1f}%)")
+            print(f"✅ {filepath} | OK ({confidence:.1f}%)")
 
-# เขียน log
+# เขียน log ลงไฟล์
 with open(LOG_PATH, "w", encoding="utf-8") as f:
     json.dump(log_data, f, indent=2, ensure_ascii=False)
 
