@@ -1,12 +1,24 @@
+# Core web framework
 fastapi
 uvicorn[standard]
+
+# Image & OCR processing
 opencv-python-headless
 numpy
 Pillow
+python-barcode[images]
+
+# File upload / env config
 python-multipart
 python-dotenv
+
+# HTTP client (เชื่อม API ภายนอก)
 httpx
-databases
+
+# Database (PostgreSQL)
+databases[postgresql]
 asyncpg
-google-cloud-storage
-python-barcode[images]
+psycopg2-binary
+
+# Optional (logging, performance)
+orjson
