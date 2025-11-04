@@ -1,10 +1,13 @@
 [build]
 builder = "NIXPACKS"
+buildCommand = "pip install -r requirements.txt"
 
 [deploy]
 runtime = "V2"
 numReplicas = 1
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
 sleepApplication = false
-multiRegionConfig = { "asia-southeast1-eqsg3a" = { numReplicas = 1 } }
+useLegacyStacker = false
+multiRegionConfig = {"asia-southeast1-eqsg3a":{"numReplicas":1}}
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
