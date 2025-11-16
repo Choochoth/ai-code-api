@@ -44,6 +44,7 @@ def health_get():
     uptime = round(time.time() - start_time, 2)
     return {"status": "ok", "uptime_seconds": uptime}
 
+
 # ---------------- Reload Templates ----------------
 @app.post("/api/reload-templates")
 def reload_all_templates():
