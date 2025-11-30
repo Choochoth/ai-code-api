@@ -139,7 +139,6 @@ def debug_templates_site(site: str = Path(..., description="site name (thai_789b
 
 
 
-
 # ---------------- CORS ----------------
 app.add_middleware(
     CORSMiddleware,
