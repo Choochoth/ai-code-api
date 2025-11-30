@@ -45,6 +45,27 @@
         "is_active": true
       },
       {
+        "package_id": "02003",
+        "package_name": "แพ็กเกจประกันยอด 3 โค้ด  (ราคาประกัน 15 ขึ้นไปทุกโค้ด)",
+        "code_qty": 3,
+        "package_badge": [
+          "hot",
+          "new"
+        ],
+        "package_icons": [
+          "🔥",
+          "⭐"
+        ],
+        "package_desc": "แพ็กเกจประกันยอด 3 โค้ด ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 3 โค้ด",
+        "package_price": 45,
+        "package_sale": 40,
+        "package_pool_group": "very_high, high",
+        "package_day_limit": 0,
+        "package_site_name": "thai_jun88k36",
+        "package_logo": "/images/procodeAi.png",
+        "is_active": true
+      },
+      {
         "package_id": "01003",
         "package_name": "แพ็กเกจประกันยอด 2 โค้ด  (ราคาประกัน 15 ขึ้นไปทุกโค้ด)",
         "code_qty": 2,
@@ -64,7 +85,7 @@
         "package_site_name": "thai_jun88k36",
         "package_logo": "/images/procodeAi.png",
         "is_active": true
-      },
+      },      
       {
         "package_id": "01004",
         "package_name": "แพ็กเกจประกันยอด 4 โค้ด  (ราคาประกัน 15 ขึ้นไปทุกโค้ด)",
