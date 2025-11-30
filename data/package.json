@@ -3,6 +3,28 @@
     "package_title": "แพ็กเกจยิงโค้ด Jun88 และ 789Bet",
     "package_desc": "แพ็กเกจยิงโค้ด ประกันราคายิงโค้ดแม่นยำ รับครั้งเดียว รอยอดเข้าบัญชีเลย ประกันราคาขั้นต่ำทุกๆแพ็กเกจ (เงื่่อนไขการรับโค้ด 1 โค้ด/ 1ยูส / 1 วัน)",
     "package_data": [
+        {
+        "package_id": "01000",
+        "package_name": "แพ็กเกจพิเศษส่งท้ายเดือน 11 แพ็กคู่ซื้อ 1 แถม 1   (รับรวม 2 โค้ด ราคาประกัน 15 ขึ้นไป)",
+        "code_qty": 2,
+        "package_badge": [
+          "hot",
+          "recommend",
+          "new"
+        ],
+        "package_icons": [
+          "🔥",
+          "⭐"
+        ],
+        "package_desc": "แพ็กเกจพิเศษส่งท้ายเดือน 11 แพ็กคู่ซื้อ 1 แถม 1 ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 2 โค้ด (ก่อน 00:00 วันนี้เท่านั้น)",
+        "package_price": 20,
+        "package_sale": 0,
+        "package_pool_group": "very_high, high",
+        "package_day_limit": 0,
+        "package_site_name": "thai_jun88k36",
+        "package_logo": "/images/procodeAi.png",
+        "is_active": true
+      },
       {
         "package_id": "01001",
         "package_name": "แพ็กเกจสุ่มราคา 1 โค้ด",
