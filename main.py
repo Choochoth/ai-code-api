@@ -8,6 +8,7 @@ import numpy as np
 import os
 import json
 
+
 from utils.image_processing import (
     match_template,
     save_templates,
