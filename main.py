@@ -135,7 +135,6 @@ def debug_templates_site(site: str = Path(..., description="site name (thai_789b
     mapping = templates.get(site, {})
     return {"site": site, "labels": list(mapping.keys()), "total_images": sum(len(v) for v in mapping.values())}
 
-
 # ---------------- CORS ----------------
 app.add_middleware(
     CORSMiddleware,
