@@ -1,24 +1,5 @@
 [phases.setup]
-nixPkgs = [
-  "libxcb",
-  "xcb-util",
-  "xcb-util-image",
-  "xcb-util-keysyms",
-  "xcb-util-renderutil",
-  "xorg.libX11",
-  "xorg.libXrender",
-  "xorg.libXext",
-  "xorg.libXfixes",
-  "mesa",
-  "glib"
-]
-
-[phases.install]
-cmds = [
-  "python -m pip uninstall opencv-python opencv-contrib-python -y || true",
-  "rm -rf /opt/venv/lib/python3.12/site-packages/cv2*",
-  "python -m pip install --no-cache-dir -r requirements.txt"
-]
+nixPkgs = []
 
 [start]
 cmd = "uvicorn main:app --host 0.0.0.0 --port $PORT"
