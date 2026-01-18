@@ -3,9 +3,9 @@ nixPkgs = []
 
 [phases.install]
 cmds = [
-  "pip uninstall opencv-python opencv-contrib-python -y || true",
+  "python -m pip uninstall opencv-python opencv-contrib-python -y || true",
   "rm -rf /opt/venv/lib/python3.12/site-packages/cv2*",
-  "pip install --no-cache-dir -r requirements.txt"
+  "python -m pip install --no-cache-dir -r requirements.txt"
 ]
 
 [start]
