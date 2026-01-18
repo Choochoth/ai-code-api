@@ -1,9 +1,14 @@
 [phases.setup]
 nixPkgs = [
   "libxcb",
+  "xcb-util",
+  "xcb-util-image",
+  "xcb-util-keysyms",
+  "xcb-util-renderutil",
   "xorg.libX11",
   "xorg.libXrender",
   "xorg.libXext",
+  "xorg.libXfixes",
   "mesa",
   "glib"
 ]
