@@ -104,25 +104,6 @@
         "package_site_name": "thai_jun88k36",
         "package_logo": "/images/procodeAi.png",
         "is_active": true
-      },
-      {
-        "package_id": "01005",
-        "package_name": "แพ็กเกจรายสัปดาห์ 7 โค้ด ซื้อครั้งเดียวรอรับทุกวันทั้งสัปดาห์  (ราคาประกัน 15 ขึ้นไปทุกโค้ด แพ็กเกจนี้จำกัดแค่ 1 ยูสเท่านั้น)",
-        "code_qty": 7,
-        "package_badge": [
-          "new"
-        ],
-        "package_icons": [
-          "⭐"
-        ],
-        "package_desc": "แพ็กเกจรายสัปดาห์ 7 โค้ด ซื้อครั้งเดียวรอรับทุกวันทั้งสัปดาห์ ไม่มีจำกัดเวลา ราคาประกัน 15 ขึ้นไปทุกโค้ด แพ็กเกจนี้จำกัดแค่ 1 ยูสเท่านั้น ยิงให้จนครบ 7 โค้ดตามจำนวน",
-        "package_price": 100,
-        "package_sale": 90,
-        "package_pool_group": "high, mid",
-        "package_day_limit": 0,
-        "package_site_name": "thai_jun88k36",
-        "package_logo": "/images/procodeAi.png",
-        "is_active": true
       }
     ]
   }
