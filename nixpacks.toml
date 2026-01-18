@@ -1,5 +1,12 @@
 [phases.setup]
-nixPkgs = []
+nixPkgs = [
+  "libxcb",
+  "xorg.libX11",
+  "xorg.libXrender",
+  "xorg.libXext",
+  "mesa",
+  "glib"
+]
 
 [phases.install]
 cmds = [
