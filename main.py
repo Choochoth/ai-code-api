@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Query, Path, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict
@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import os
 import json
-
 
 from utils.image_processing import (
     match_template,
@@ -33,17 +32,6 @@ async def startup():
 # ---------------- Helpers ----------------
 def validate_site(site: str):
     return site.lower() in SUPPORTED_SITES
-
-
-# ---------------- Health ----------------
-@app.get("/")
-def read_root():
-    return {"status": "ok"}
-
-@app.get("/health")
-def health_get():
-    uptime = round(time.time() - start_time, 2)
-    return {"status": "ok", "uptime_seconds": uptime}
 
 # ---------------- Reload Templates ----------------
 @app.post("/api/reload-templates")
@@ -89,7 +77,7 @@ async def add_template(
         return JSONResponse(status_code=400, content={"error": "Label length does not match cropped chars."})
 
     saved_files = save_templates(site, label, char_images)
-    load_templates(site)  # reload only that site
+    # load_templates(site)  # reload only that site
 
     return {"message": "Templates saved.", "saved": saved_files, "summary": get_template_summary()}
 
@@ -135,6 +123,18 @@ def debug_templates_site(site: str = Path(..., description="site name (thai_789b
     from utils.image_processing import templates
     mapping = templates.get(site, {})
     return {"site": site, "labels": list(mapping.keys()), "total_images": sum(len(v) for v in mapping.values())}
+
+# ---------------- Health ----------------
+@app.get("/")
+def read_root():
+    return {"status": "ok"}
+
+@app.get("/health")
+def health_get():
+    uptime = round(time.time() - start_time, 2)
+    return {"status": "ok", "uptime_seconds": uptime}
+
+
 
 # ---------------- CORS ----------------
 app.add_middleware(
@@ -182,5 +182,3 @@ async def api_submit_order(
         notifyTelegram=notifyTelegram,
         telegramId=telegramId
     )
-    
-    

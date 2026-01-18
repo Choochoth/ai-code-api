@@ -8,7 +8,7 @@ from typing import List, Tuple, Optional, Dict
 load_dotenv()
 
 # ---------------- Constants ----------------
-SUPPORTED_SITES = ["thai_789bet", "thai_jun88k36", "thai_f168"]
+SUPPORTED_SITES = ["thai_789bet", "thai_jun88k36", "f168", "mk8"]
 
 ROOT_TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "captcha_templates")
 os.makedirs(ROOT_TEMPLATE_DIR, exist_ok=True)

@@ -64,7 +64,7 @@ async def submit_payment(
     except Exception:
         return JSONResponse({"status": "error", "message": "user JSON invalid"}, status_code=400)
 
-    # total_codes = sum(u["count"] for u in users)
+    total_codes = sum(u["count"] for u in users)
     # ✅ TODO: เช็คกับ package limit ถ้ามี data จาก package.json
 
     # บันทึกไฟล์สลิป

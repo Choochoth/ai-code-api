@@ -19,7 +19,7 @@ uploads/
 
 # Logs
 *.log
-# *.json
+*.json
 
 # OS or editor-specific files
 .DS_Store
