@@ -12,10 +12,6 @@
           "sale",
           "new"
         ],
-        "package_icons": [
-          "🔥",
-          "⭐"
-        ],
         "package_desc": "ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 1 โค้ด",
         "package_price": 15,
         "package_sale": 0,
@@ -32,10 +28,6 @@
         "package_badge": [
           "hot",
           "recommend"
-        ],
-        "package_icons": [
-          "🔥",
-          "⭐"
         ],
         "package_desc": "แพ็กเกจประกันยอด 2 โค้ด ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 2 โค้ด",
         "package_price": 30,
@@ -54,10 +46,6 @@
           "hot",
           "new"
         ],
-        "package_icons": [
-          "🔥",
-          "⭐"
-        ],
         "package_desc": "แพ็กเกจประกันยอด 3 โค้ด ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 3 โค้ด",
         "package_price": 45,
         "package_sale": 40,
@@ -73,9 +61,6 @@
         "code_qty": 4,
         "package_badge": [
           "recommend"
-        ],
-        "package_icons": [
-          "⭐"
         ],
         "package_desc": "แพ็กเกจประกันยอด 4 โค้ด ประกันยอดโค้ดราคา 50 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 4 โค้ด",
         "package_price": 50,
