@@ -1,15 +1,17 @@
-#main.py
+# main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form
 from pathlib import Path as FilePath
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict
+from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel
+from typing import List
 import time
 import cv2
 import numpy as np
 import os
 import json
+
 from utils.image_processing import (
     match_template,
     save_templates,
@@ -18,160 +20,156 @@ from utils.image_processing import (
     get_template_summary,
     SUPPORTED_SITES,
 )
-from utils.order_package import submit_payment  # import ฟังก์ชัน
+from utils.order_package import submit_payment
 
+
+# ===============================
+# 📁 Paths
+# ===============================
 DATA_FILE = FilePath("data/poll_targets.json")
 
+# ===============================
+# 📦 Models
+# ===============================
 class PollTargetIn(BaseModel):
     channelId: str
     messageId: int
-# ---------------- FastAPI App ----------------
+
+
+# ===============================
+# 🚀 App
+# ===============================
 app = FastAPI()
 start_time = time.time()
 
-# ---------------- Startup ----------------
+
+# ===============================
+# 🔄 Startup
+# ===============================
 @app.on_event("startup")
 async def startup():
     print("🔄 Loading templates at startup...")
     load_templates()
     print("✅ Templates loaded into memory")
 
-# ---------------- Helpers ----------------
+
+# ===============================
+# 🔧 Helpers
+# ===============================
 def validate_site(site: str):
     return site.lower() in SUPPORTED_SITES
 
-# ---------------- Reload Templates ----------------
+
+# ===============================
+# 🔁 Reload Templates
+# ===============================
 @app.post("/api/reload-templates")
 def reload_all_templates():
-    load_templates()  # reload all sites
-    return {"message": "All templates reloaded.", "summary": get_template_summary()}
+    load_templates()
+    return {
+        "message": "All templates reloaded.",
+        "summary": get_template_summary()
+    }
 
-# ---------------- Add Template ----------------
+
+# ===============================
+# ➕ Add Template
+# ===============================
 @app.post("/api/{site}/add-template")
 async def add_template(
-    site: str = Path(..., description="site name (thai_789bet, thai_jun88k36, thai_f168)"),
+    site: str = Path(...),
     label: str = Query(..., min_length=4, max_length=4),
-    file: UploadFile = File(...),
+    file: UploadFile = File(...)
 ):
     site = site.lower()
     if not validate_site(site):
-        return JSONResponse(status_code=400, content={"error": "unsupported site", "supported": SUPPORTED_SITES})
-
-    # Validate label rules
-    if site in ("thai_jun88k36", "thai_789bet"):
-        if not label.isalnum() or not label.upper() == label:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "label must be uppercase A-Z and 0-9 for this site"}
-            )
-    elif site == "thai_f168":
-        if not label.isalnum():
-            return JSONResponse(
-                status_code=400,
-                content={"error": "label must be A-Z, a-z or 0-9 for f168"}
-            )
-
-    # Decode image
-    image_bytes = await file.read()
-    file_bytes = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
-    if img is None:
-        return JSONResponse(status_code=400, content={"error": "Invalid image file."})
-
-    # Split and save
-    char_images = crop_captcha(img, num_chars=4)
-    if len(label) != len(char_images):
-        return JSONResponse(status_code=400, content={"error": "Label length does not match cropped chars."})
-
-    saved_files = save_templates(site, label, char_images)
-    # load_templates(site)  # reload only that site
-
-    return {"message": "Templates saved.", "saved": saved_files, "summary": get_template_summary()}
-
-# ---------------- OCR Endpoint ----------------
-@app.post("/api/{site}/ocr")
-async def ocr(
-    site: str = Path(..., description="site name (thai_789bet, thai_jun88k36, thai_f168)"),
-    file: UploadFile = File(...),
-):
-    site = site.lower()
-    if not validate_site(site):
-        return JSONResponse(status_code=400, content={"error": "unsupported site", "supported": SUPPORTED_SITES})
+        return JSONResponse(
+            status_code=400,
+            content={"error": "unsupported site", "supported": SUPPORTED_SITES},
+        )
 
     image_bytes = await file.read()
-    file_bytes = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
+    img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_GRAYSCALE)
     if img is None:
-        return JSONResponse(status_code=400, content={"error": "Invalid image file."})
+        raise HTTPException(400, "Invalid image")
 
     chars = crop_captcha(img, num_chars=4)
-    result_text = ""
-    confidences = []
+    if len(chars) != len(label):
+        raise HTTPException(400, "Label length mismatch")
 
-    for char_img in chars:
-        label, conf = match_template(site, char_img)
-        result_text += (label if label is not None else "?")
-        confidences.append(conf)
+    saved = save_templates(site, label, chars)
+    return {
+        "message": "Templates saved",
+        "saved": saved,
+        "summary": get_template_summary(),
+    }
 
-    avg_confidence = round(sum(confidences) / len(confidences), 0) if confidences else 0
 
-    return {"text": result_text, "confidence": int(avg_confidence), "site": site}
-
-# ---------------- Debug Templates ----------------
-@app.get("/debug/templates")
-def debug_templates():
-    return get_template_summary()
-
-@app.get("/debug/templates/{site}")
-def debug_templates_site(site: str = Path(..., description="site name (thai_789bet, thai_jun88k36, thai_f168)")):
+# ===============================
+# 🔍 OCR
+# ===============================
+@app.post("/api/{site}/ocr")
+async def ocr(
+    site: str = Path(...),
+    file: UploadFile = File(...)
+):
     site = site.lower()
     if not validate_site(site):
-        return JSONResponse(status_code=400, content={"error": "unsupported site", "supported": SUPPORTED_SITES})
-    from utils.image_processing import templates
-    mapping = templates.get(site, {})
-    return {"site": site, "labels": list(mapping.keys()), "total_images": sum(len(v) for v in mapping.values())}
+        raise HTTPException(400, "unsupported site")
 
+    img = cv2.imdecode(
+        np.frombuffer(await file.read(), np.uint8),
+        cv2.IMREAD_GRAYSCALE,
+    )
+
+    chars = crop_captcha(img, num_chars=4)
+    text = ""
+    confs = []
+
+    for c in chars:
+        label, conf = match_template(site, c)
+        text += label or "?"
+        confs.append(conf)
+
+    return {
+        "text": text,
+        "confidence": int(sum(confs) / len(confs)) if confs else 0,
+        "site": site,
+    }
+
+
+# ===============================
+# 📡 GET poll-targets
+# ===============================
 @app.get("/api/poll-targets")
 def get_poll_targets():
     if not DATA_FILE.exists():
-        raise HTTPException(status_code=404, detail="poll_targets.json not found")
+        return []
 
     try:
         with DATA_FILE.open("r", encoding="utf-8") as f:
             data = json.load(f)
-
         if not isinstance(data, list):
-            raise HTTPException(
-                status_code=500,
-                detail="poll_targets.json must be an array"
-            )
-
+            raise ValueError("poll_targets.json must be array")
         return data
+    except Exception as e:
+        raise HTTPException(500, f"Invalid poll_targets.json: {e}")
 
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Invalid JSON format: {e}"
-        )
 
-@app.post("/api/poll-update")
-def poll_update(payload: PollTargetIn):
-    # 🔒 ensure folder exists
+# ===============================
+# 🧠 INTERNAL sync logic
+# ===============================
+def _poll_update_sync(payload: PollTargetIn):
     DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    # 🔄 load existing data
     if DATA_FILE.exists():
-        try:
-            with DATA_FILE.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError("poll_targets.json must be an array")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Invalid poll_targets.json: {e}")
+        with DATA_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, list):
+            raise ValueError("poll_targets.json must be array")
     else:
         data = []
 
-    # 🔁 update or insert
     updated = False
     for item in data:
         if item.get("channelId") == payload.channelId:
@@ -180,19 +178,13 @@ def poll_update(payload: PollTargetIn):
             break
 
     if not updated:
-        data.append(
-            {
-                "channelId": payload.channelId,
-                "messageId": payload.messageId,
-            }
-        )
+        data.append({
+            "channelId": payload.channelId,
+            "messageId": payload.messageId,
+        })
 
-    # 💾 write back
-    try:
-        with DATA_FILE.open("w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cannot write poll_targets.json: {e}")
+    with DATA_FILE.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
 
     return {
         "status": "ok",
@@ -202,20 +194,36 @@ def poll_update(payload: PollTargetIn):
         "total": len(data),
     }
 
-# ---------------- Health ----------------
+
+# ===============================
+# ✨ POST poll-update (ASYNC SAFE)
+# ===============================
+@app.post("/api/poll-update")
+async def poll_update(payload: PollTargetIn):
+    try:
+        return await run_in_threadpool(_poll_update_sync, payload)
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+# ===============================
+# ❤️ Health
+# ===============================
 @app.get("/")
-def read_root():
+def root():
     return {"status": "ok"}
 
 @app.get("/health")
-def health_get():
-    uptime = round(time.time() - start_time, 2)
-    return {"status": "ok", "uptime_seconds": uptime}
+def health():
+    return {
+        "status": "ok",
+        "uptime_seconds": round(time.time() - start_time, 2),
+    }
 
 
-
-
-# ---------------- CORS ----------------
+# ===============================
+# 🌐 CORS
+# ===============================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -224,22 +232,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------- Packages ----------------
+
+# ===============================
+# 📦 Packages
+# ===============================
 @app.get("/api/packages")
 def get_packages(limit: int = 100, offset: int = 0):
-    file_path = os.path.join("data", "package.json")
-    if not os.path.exists(file_path):
-        return JSONResponse({"error": "package.json not found"}, status_code=404)
-    with open(file_path, "r", encoding="utf-8") as f:
+    path = "data/package.json"
+    if not os.path.exists(path):
+        raise HTTPException(404, "package.json not found")
+
+    with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    package_data = data.get("package", {}).get("package_data", [])
-    sliced = package_data[offset: offset+limit]
+
+    packages = data.get("package", {}).get("package_data", [])
     return {
-        "package": {"package_data": sliced},
-        "meta": {"total": len(package_data), "limit": limit, "offset": offset}
+        "package": {"package_data": packages[offset: offset + limit]},
+        "meta": {
+            "total": len(packages),
+            "limit": limit,
+            "offset": offset,
+        },
     }
 
-# ---------------- Submit Order ----------------
+
+# ===============================
+# 💰 Submit Order
+# ===============================
 @app.post("/api/submit-order")
 async def api_submit_order(
     package_id: str = Form(...),
@@ -249,7 +268,7 @@ async def api_submit_order(
     user: str = Form(...),
     slip: UploadFile = File(...),
     notifyTelegram: bool = Form(False),
-    telegramId: str = Form(None)
+    telegramId: str = Form(None),
 ):
     return await submit_payment(
         package_id=package_id,
@@ -259,5 +278,5 @@ async def api_submit_order(
         user=user,
         slip=slip,
         notifyTelegram=notifyTelegram,
-        telegramId=telegramId
+        telegramId=telegramId,
     )
