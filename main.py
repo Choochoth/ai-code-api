@@ -1,5 +1,8 @@
+#main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form
+from pathlib import Path as FilePath
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict
 import time
@@ -7,7 +10,6 @@ import cv2
 import numpy as np
 import os
 import json
-
 from utils.image_processing import (
     match_template,
     save_templates,
@@ -17,6 +19,8 @@ from utils.image_processing import (
     SUPPORTED_SITES,
 )
 from utils.order_package import submit_payment  # import ฟังก์ชัน
+
+DATA_FILE = FilePath("data/poll_targets.json")
 
 # ---------------- FastAPI App ----------------
 app = FastAPI()
@@ -124,6 +128,83 @@ def debug_templates_site(site: str = Path(..., description="site name (thai_789b
     mapping = templates.get(site, {})
     return {"site": site, "labels": list(mapping.keys()), "total_images": sum(len(v) for v in mapping.values())}
 
+@app.get("/api/poll-targets")
+def get_poll_targets():
+    if not DATA_FILE.exists():
+        raise HTTPException(status_code=404, detail="poll_targets.json not found")
+
+    try:
+        with DATA_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if not isinstance(data, list):
+            raise HTTPException(
+                status_code=500,
+                detail="poll_targets.json must be an array"
+            )
+
+        return data
+
+    except json.JSONDecodeError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Invalid JSON format: {e}"
+        )
+
+
+class PollTargetIn(BaseModel):
+    channelId: str
+    messageId: int
+
+
+@app.post("/api/poll-update")
+def poll_update(payload: PollTargetIn):
+    # 🔒 ensure folder exists
+    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    # 🔄 load existing data
+    if DATA_FILE.exists():
+        try:
+            with DATA_FILE.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError("poll_targets.json must be an array")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Invalid poll_targets.json: {e}")
+    else:
+        data = []
+
+    # 🔁 update or insert
+    updated = False
+    for item in data:
+        if item.get("channelId") == payload.channelId:
+            item["messageId"] = payload.messageId
+            updated = True
+            break
+
+    if not updated:
+        data.append(
+            {
+                "channelId": payload.channelId,
+                "messageId": payload.messageId,
+            }
+        )
+
+    # 💾 write back
+    try:
+        with DATA_FILE.open("w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot write poll_targets.json: {e}")
+
+    return {
+        "status": "ok",
+        "updated": updated,
+        "channelId": payload.channelId,
+        "messageId": payload.messageId,
+        "total": len(data),
+    }
+
 # ---------------- Health ----------------
 @app.get("/")
 def read_root():
@@ -133,6 +214,7 @@ def read_root():
 def health_get():
     uptime = round(time.time() - start_time, 2)
     return {"status": "ok", "uptime_seconds": uptime}
+
 
 
 
