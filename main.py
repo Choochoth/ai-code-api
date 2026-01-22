@@ -22,6 +22,9 @@ from utils.order_package import submit_payment  # import ฟังก์ชั�
 
 DATA_FILE = FilePath("data/poll_targets.json")
 
+class PollTargetIn(BaseModel):
+    channelId: str
+    messageId: int
 # ---------------- FastAPI App ----------------
 app = FastAPI()
 start_time = time.time()
@@ -150,12 +153,6 @@ def get_poll_targets():
             status_code=500,
             detail=f"Invalid JSON format: {e}"
         )
-
-
-class PollTargetIn(BaseModel):
-    channelId: str
-    messageId: int
-
 
 @app.post("/api/poll-update")
 def poll_update(payload: PollTargetIn):
