@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import os
 import json
+import random
 
 from utils.image_processing import (
     match_template,
@@ -149,9 +150,14 @@ def get_poll_targets():
     try:
         with DATA_FILE.open("r", encoding="utf-8") as f:
             data = json.load(f)
+
         if not isinstance(data, list):
             raise ValueError("poll_targets.json must be array")
+
+        random.shuffle(data)  # 🔀 random ลำดับ array
+
         return data
+
     except Exception as e:
         raise HTTPException(500, f"Invalid poll_targets.json: {e}")
 
