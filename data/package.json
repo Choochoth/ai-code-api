@@ -3,15 +3,27 @@
     "package_title": "แพ็กเกจยิงโค้ด Jun88 และ 789Bet",
     "package_desc": "แพ็กเกจยิงโค้ด ประกันราคายิงโค้ดแม่นยำ รับครั้งเดียว รอยอดเข้าบัญชีเลย ประกันราคาขั้นต่ำทุกๆแพ็กเกจ (เงื่่อนไขการรับโค้ด 1 โค้ด/ 1ยูส / 1 วัน)",
     "package_data": [
+        {
+        "package_id": "01201",
+        "package_name": "แพ็กเกจระยะยาว ประกันยอดโค้ด 5 โค้ด  จำกัดยูสเซอร์รับแค่ 1 ยูส / 5 โค้ด (ราคาประกัน 15 ขึ้นไป)",
+        "code_qty": 1,
+        "package_badge": [
+          "new"
+        ],
+        "package_desc": "ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้ครบ 5 แน่นอน จำกัดยูสเซอร์รับแค่ 1 ยูส/ 5 โค้ด",
+        "package_price": 50,
+        "package_sale": 0,
+        "package_pool_group": "very_high, high",
+        "package_day_limit": 0,
+        "package_site_name": "thai_jun88k36",
+        "package_logo": "/images/procodeAi.png",
+        "is_active": true
+      },
       {
         "package_id": "01001",
         "package_name": "แพ็กเกจประกันยอดโค้ด 1 โค้ด (ราคาประกัน 15 ขึ้นไป)",
         "code_qty": 1,
-        "package_badge": [
-          "hot",
-          "sale",
-          "new"
-        ],
+        "package_badge": [],
         "package_desc": "ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 1 โค้ด",
         "package_price": 15,
         "package_sale": 0,
@@ -25,10 +37,7 @@
         "package_id": "01002",
         "package_name": "แพ็กเกจประกันยอด 2 โค้ด  (ราคาประกัน 15 ขึ้นไปทุกโค้ด)",
         "code_qty": 2,
-        "package_badge": [
-          "hot",
-          "recommend"
-        ],
+        "package_badge": [],
         "package_desc": "แพ็กเกจประกันยอด 2 โค้ด ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 2 โค้ด",
         "package_price": 30,
         "package_sale": 0,
@@ -42,10 +51,7 @@
         "package_id": "01003",
         "package_name": "แพ็กเกจประกันยอด 3 โค้ด  (ราคาประกัน 15 ขึ้นไปทุกโค้ด)",
         "code_qty": 3,
-        "package_badge": [
-          "hot",
-          "new"
-        ],
+        "package_badge": [],
         "package_desc": "แพ็กเกจประกันยอด 3 โค้ด ประกันยอดโค้ดราคา 15 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 3 โค้ด",
         "package_price": 45,
         "package_sale": 40,
@@ -59,9 +65,7 @@
         "package_id": "01004",
         "package_name": "แพ็กเกจประกันยอด 4 โค้ด  (ราคาประกัน 15 ขึ้นไปทุกโค้ด)",
         "code_qty": 4,
-        "package_badge": [
-          "recommend"
-        ],
+        "package_badge": [],
         "package_desc": "แพ็กเกจประกันยอด 4 โค้ด ประกันยอดโค้ดราคา 50 บาทขึ้นไป ไม่มีจำกัดเวลา ได้แน่นอน 4 โค้ด",
         "package_price": 50,
         "package_sale": 0,
