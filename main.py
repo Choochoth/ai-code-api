@@ -99,12 +99,40 @@ async def add_template(
         raise HTTPException(400, "Label length mismatch")
 
     saved = save_templates(site, label, chars)
+    # ✅ สำคัญมาก
+    # load_templates(site)
+
     return {
         "message": "Templates saved",
         "saved": saved,
         "summary": get_template_summary(),
     }
 
+# ===============================
+# ➕ clear Template
+# ===============================
+@app.post("/api/{site}/clear-templates")
+def clear_templates(site: str):
+    site = site.lower()
+    if not validate_site(site):
+        raise HTTPException(400, "unsupported site")
+
+    site_dir = os.path.join("captcha_templates", site)
+
+    deleted = 0
+    for f in os.listdir(site_dir):
+        if f.endswith(".png"):
+            os.remove(os.path.join(site_dir, f))
+            deleted += 1
+
+    # 🔥 sync memory
+    load_templates(site)
+
+    return {
+        "message": "cleared",
+        "deleted": deleted,
+        "summary": get_template_summary()
+    }
 
 # ===============================
 # 🔍 OCR
