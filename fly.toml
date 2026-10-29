@@ -2,11 +2,17 @@
 app = "ai-code-api"
 primary_region = "iad"
 
+[build]
+  dockerfile = "Dockerfile"
+
 [env]
   ENV = "development"
   PORT = "8000"
   GCS_BUCKET_NAME = "captcha-ocr-service"
   GOOGLE_APPLICATION_CREDENTIALS = "/app/captcha-templates-187c30864e63.json"
+
+[processes]
+  app = "/usr/local/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000"
 
 [http_service]
   internal_port = 8000
